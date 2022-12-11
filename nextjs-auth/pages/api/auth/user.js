@@ -1,8 +1,5 @@
 // https://github.com/vercel/examples/blob/main/edge-functions/jwt-authentication/lib/auth.ts
-import { SignJWT, jwtVerify } from "jose";
-import { nanoid } from "nanoid";
-
-import { serialize } from "cookie";
+import { jwtVerify } from "jose";
 
 const JWT_SECRET = process.env.JWT_SECRET || "ALA MA KOTAłka";
 const COOKIE_PUBLIC_NAME = "wuzetkaJWT";
