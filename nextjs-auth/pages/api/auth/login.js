@@ -1,36 +1,28 @@
-/* eslint-disable import/no-anonymous-default-export */
-import { sign } from "jsonwebtoken";
+// https://github.com/vercel/examples/blob/main/edge-functions/jwt-authentication/lib/auth.ts
+import { SignJWT, jwtVerify } from "jose";
+import { nanoid } from "nanoid";
+
 import { serialize } from "cookie";
 
-const secret = process.env.SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "ALA MA KOTAłka";
+const COOKIE_PUBLIC_NAME = "wuzetkaJWT";
 
-export default async function (req, res) {
-  const { username, password } = req.body;
+export default async function handler(req, res) {
+  const token = await new SignJWT({})
+    .setProtectedHeader({ alg: "HS256" })
+    .setJti(nanoid())
+    .setIssuedAt()
+    .setExpirationTime("2h")
+    .sign(new TextEncoder().encode(JWT_SECRET));
 
-  // Check in the database
-  // if a user with this username
-  // and password exists
-  if (username === "Admin" && password === "Admin") {
-    const token = sign(
-      {
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30, // 30 days
-        username: username,
-      },
-      secret
-    );
+  const serialised = serialize(COOKIE_PUBLIC_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== "development",
+    sameSite: "strict",
+    maxAge: 60 * 60 * 24 * 30,
+    path: "/",
+  });
 
-    const serialised = serialize("OursiteJWT", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== "development",
-      sameSite: "strict",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-    });
-
-    res.setHeader("Set-Cookie", serialised);
-
-    res.status(200).json({ message: "Success!" });
-  } else {
-    res.json({ message: "Invalid credentials!" });
-  }
+  res.setHeader("Set-Cookie", serialised);
+  res.status(200).json({ message: "Success!", token: token });
 }
